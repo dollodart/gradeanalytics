@@ -1,54 +1,5 @@
 import numpy as np
-
-#def circle_pairs(m):
-#    dct = {}
-#    for i in range(m):
-#        dct[i] = [i - 1, (i + 1) // m]
-
-def rectangle_pairs(m, p):
-    """One can use modular arithmetic and store this as a lexicographical single array. """
-    dct = {}
-    for i in range(m):
-        w = i > 0
-        e = i < m - 1
-        for j in range(p):
-            n = j < p - 1
-            s = j > 0
-            nw = n & w
-            ne = n & e
-            sw = s & w
-            se = s & e
-
-            nn = []
-            if w:
-                nn.append((i - 1, j))
-            if e:
-                nn.append((i + 1, j))
-            if n:
-                nn.append((i, j + 1))
-            if s:
-                nn.append((i, j - 1))
-            if nw:
-                nn.append((i - 1, j + 1))
-            if ne:
-                nn.append((i + 1, j + 1))
-            if sw:
-                nn.append((i - 1, j - 1))
-            if se:
-                nn.append((i + 1, j - 1))
-            dct[(i, j)] = nn
-    return dct
-
-
-def conn_mat(rpairs, nrows, ncols):
-    mat = np.zeros((ncols * nrows, ncols * nrows))
-    for p in rpairs.keys():
-        ps = p[0] + ncols * p[1]
-        for pp in rpairs[p]:
-            pps = pp[0] + ncols * pp[1]
-            mat[ps, pps] += 1
-    return np.triu(mat)
-
+from conn import conn_mat
 
 def optimize_rectangle_placement(x, nrows, ncols, penalty, temp):
     """                     
@@ -71,51 +22,59 @@ def optimize_rectangle_placement(x, nrows, ncols, penalty, temp):
 
     """
 
-    num_students = len(x) 
+    nstudents = len(x) 
+    nseats = nrows * ncols
 
     if ncols > nrows:
-        nrows, ncols = ncols,nrows
+        nrows, ncols = ncols, nrows
 
     np.random.seed(20)
-    ar = np.array(x + [0] * (nrows * ncols - num_students))
+    ar = np.array(x + [0] * (nseats - nstudents))
 
-    I = np.zeros((nrows * ncols, nrows * ncols))
+    def calc(ar, penalty):
+        I = np.zeros((nseats, nseats))
+        for i in range(nseats):
+            for j in range(nseats):
+                I[i, j] = penalty(ar[i], ar[j])
+            I[i, i] = 0
+        return I
 
-    for i in range(nrows):
-        for j in range(ncols):
-            I[i, j] = penalty(ar[i], ar[j])
-        I[i, i] = 0
-    I = np.triu(I) # do not double count interactions
-
-    rpd = rectangle_pairs(nrows, ncols)
-    C = conn_mat(rpd, nrows, ncols)
+#    rpd = rectangle_pairs(nrows, ncols)
+#    C = conn_mat(rpd, nrows, ncols)
+    C = np.eye(nseats, nseats, -1) + np.eye(nseats, nseats, 1) # this is equivalent to a linear arrangement
+    # periodic matrix (for circular arrangement)
+    C[nseats - 1, 0] = 1
+    C[0, nseats - 1] = 1
+    # this makes an idempotent matrix, C^2 = C
 
     counter = 0
 
-    while counter < (nrows * ncols)**2:
-        p1 = np.random.randint(0, nrows * ncols)
-        p2 = np.random.randint(0, nrows * ncols)
-        # swap both the row and columns of the connectivity matrix to effectively swap positions
-        # the final result of swap order is independent of the order of swapping
-        # only two two columns and two rows need to be evaluated
-        # since there are only nearest neighbor interactions
+    I = calc(ar, penalty)
 
-        arg = (C[p2]*I[p1] + C[p1]*I[p2] + C[:,p2]*I[:,p1] + C[:,p1]*I[:,p2]) \
-        - (C[p1]*I[p1] + C[p2]*I[p2] + C[:,p1]*I[:,p1] + C[:,p2]*I[:,p2])
-        arg = arg.sum()
+    while counter < nseats**2:
+        p1 = np.random.randint(0, nseats)
+        p2 = np.random.randint(0, nseats)
+        while p1 == p2: 
+            p2 = np.random.randint(0, nseats)
+
+        e = (C * I).sum()
+        ar[p1], ar[p2] = ar[p2], ar[p1]
+        Io = I.copy()
+        I = calc(ar, penalty)
+        e2 = (C * I).sum()
+        arg = (e2 - e) / 2
         arg /= temp
 
         if np.exp(arg) < 0.5:
-            C[p1], C[p2] = C[p2], C[p1]
-            C[:, p1], C[:, p2] = C[:, p2], C[:, p1]
             counter = 0
-            ar[p1], ar[p2] = ar[p2], ar[p1]
         else:
+            ar[p1], ar[p2] = ar[p2], ar[p1]
+            I = Io
             counter += 1
 
     seats = np.zeros((nrows,ncols))
     for counter, stu in enumerate(ar):
-        x, y = counter % nrows, counter // nrows
+        x, y = counter % ncols, counter // ncols
         seats[x,y] = stu
 
     return seats
@@ -132,8 +91,6 @@ def optimize_circle_placement(x, penalty, temp = 1):
     """
 
     num = len(x)
-    print(num)
-    print()
     egy = [penalty(i, j) for i, j in np.vstack((x, np.roll(x, -1))).transpose()]
     sm = sum(egy)
     mxm = np.argmax(egy)
@@ -155,8 +112,6 @@ def optimize_circle_placement(x, penalty, temp = 1):
 
         arg = (sm + p1 + p2 + p3 + p4 - sm0) / temp
         if np.exp( arg ) < 0.5:
-            # p = int(e^x, -inf, y) = e^y
-            # y = ln(p)
             egy[mxm] = p1
             egy[mxm - 1] = p2
             egy[mnm] = p3
@@ -187,7 +142,38 @@ if __name__ == '__main__':
     temp /= 10 # in physical systems, the ambient thermal energy, e.g., at room temperature of 25 meV, 
     # will be more than a factor of ten times less than, e.g., an adsorption energy
 
+    # check energy calculation is the same between the two
+    x = student_scores
+    np.random.shuffle(x) 
+    nseats = m*n
+    nstudents = len(x)
+
+    egy = [penalty(i, j) for i, j in np.vstack((x, np.roll(x, -1))).transpose()]
+    egy = sum(egy)
+
+    ar = np.array(x + [0] * (nseats - nstudents))
+    def calc(ar, penalty):
+        I = np.zeros((nseats, nseats))
+        for i in range(nseats):
+            for j in range(nseats):
+                I[i, j] = penalty(ar[i], ar[j])
+            I[i, i] = 0
+        return I
+
+    C = np.eye(nseats, nseats, -1) + \
+        np.eye(nseats, nseats, 1) # this is equivalent to a linear arrangement
+    C[0, -1] = 1
+    C[-1, 0] = 1
+    I = calc(ar, penalty)
+    egy2 = C*I
+    egy2 = egy2.sum()
+    print(egy, egy2/2)
+    assert egy == egy2 / 2
+
+
     ocp = optimize_circle_placement(student_scores, penalty, temp)
     print(ocp)
     orp = optimize_rectangle_placement(student_scores, m, n, penalty, temp)
-    print(orp)
+    print(np.ravel(orp))
+    #orp = optimize_rectangle_placement(student_scores, m + 1, n, penalty, temp)
+    #print(np.ravel(orp))

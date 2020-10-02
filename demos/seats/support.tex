@@ -1,0 +1,47 @@
+\documentclass{article}
+\usepackage{amsmath}
+
+\begin{document}
+
+Let $m$ be the number of rows and $n$ be the number of columns, and $p = mn$ be the number of seats, which is generally equal to or slightly greater than the number of students. Define the connectivity matrix $C$ as the $p$-by-$p$ matrix which tells whether or not to seats are neighboring each other. When considering seats arranged in a circle, this matrix is the positive off-diagonal and negative off-diagonal, if positions are assigned in the natural way in sequential order around the circle. That is, the seat at position 2 is neighboring the seat at position 1 and also at position 3. This double counts interactions but can be avoided by using just one off diagonal, say the negative, which would have in column 2 an entry at row 3, at column 3 an entry at row 4, and thus account for all interactions.
+
+The construction for an $m$-by-$n$ physical arrangement of the $p$-by-$p$ connectivity matrix can be accomplished by modular arithmetic, in particular, starting index at $0$ there are the rules as applied (in sequential order) to determine the values around the $i$th index depending on the $i \bmod n$ and $i/n$ (integral quotient) where $i \in [0, p)$.
+
+In particular, in the lexicographical ordering, the 3-by-3 classroom is assigned indices as
+
+$$\begin{pmatrix} 
+0 & 1 & 2 \\ 
+3 & 4 & 5 \\ 
+6 & 7 & 8 
+\end{pmatrix}$$
+
+The type of position is determined by those two modulus. This then has to be mapped to an index in the interaction matrix. Right and left neighbors in the row are simple, just $\pm 1$. Bottom and top neighbors are $\pm n \pm 1$.
+The connectivity matrix is a function of the geometry of the classroom and not the seating arrangement. Assuming a student can look diagonally as well as forward and back just as well, the interior student has 8 other students they can see, the edge student 5, the corner student 3.
+
+
+\begin{table}[!h]
+    \caption{The connectivity matrix for a 3 row and 3 columns classroom. There are four corner seats, four edge seats, and one interior seat, and the 3-by-3 matrix is the minimum sized matrix for which all types of seat positions are had.}
+\centering
+\include{3-by-3}
+\end{table}
+
+The interaction matrix is defined by some pair-wise penalty function, based off, e.g., how well-correlated assignment grades are among students, $I_{ij} = f(s(i), s(j))$ where $f$ is the penalty function and $s$ is the function which gives the student ID at a seat number $i, j$. When the seat $x$ is swapped with the seat $y$, $I$ must be updated since the $s(x) \to s(y)$ and $s(y) \to s(x)$. 
+
+The Hadamard product of the connectivity matrix and interaction matrix gives the energy matrix, $E = C \circ I$, which has at $(i,j)$ the value of the pairwise penalty between students $i$ and $j$. The total energy can be divided by 2 to prevent double counting, but this is irrelevant for most purposes. The probability is taken as
+
+$$p = \exp\left(-\frac{\sum(E) - \sum(E_0)}{T} \right) $$
+
+This is compared to a randomized value between 0 and 1 to determine if the step is taken. The value of $T$ is decisive in the probability of accepting a step. In physical systems, the temperature may be $25$ meV at room conditions, and bond energies may be order 1 eV. In any case the average value of the interaction function is important, which is calculated in the discrete case as $$\frac{1}{p^2} \sum_{i=0}^{p-1} \sum_{j=0}^{p-1} f(i,j) \,,$$ and some fraction of this can be chosen for the temperature. 
+
+\section{Computationally Efficient Implemenatation}
+
+For nearest neighbor interactions, only those $s(x) \pm 1$ and $s(y)\pm 1$ need to be updated on swap. The entry point to the data structure can always be a unique ID, since randomizing positions is equivalent to randomizing IDs to swap. Because of this, a dictionary data structure for student ID to network element, where that network element has some number of connections like a doubly linked list, is needed.
+
+\begin{enumerate}
+    \item Randomly select 2 student IDs
+    \item Use a hash table to map student ids to student id objects (dictionary is python object for hash tables) 
+    \item Swap all links for the two objects
+    \item Compute energy and decide to keep or reverse swap
+\end{enumerate}
+
+\end{document}
