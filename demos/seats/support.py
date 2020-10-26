@@ -75,7 +75,7 @@ def optimize_rectangle_placement(x, nrows, ncols, penalty, temp):
     seats = np.zeros((nrows,ncols))
     for counter, stu in enumerate(ar):
         x, y = counter % ncols, counter // ncols
-        seats[x,y] = stu
+        seats[y,x] = stu
 
     return seats
 
