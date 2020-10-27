@@ -66,6 +66,14 @@ def conn_mat(m,n):
             C[i, i + m + 1] = 1
             C[i, i + m] = 1
             C[i, i + m - 1] = 1
-    #from pandas import DataFrame
-    #DataFrame(I).to_latex('3-by-3.tex')
     return C
+
+if __name__ == '__main__':
+    C1 = conn_mat(3,3)
+    C2 = conn_mat(3,4)
+    C3 = conn_mat(4,3)
+    print(C1,C2,C3, sep='\n')
+
+    from pandas import DataFrame
+    DataFrame(C1,dtype=int).to_latex('3-by-3.tex')
+

@@ -1,7 +1,7 @@
 import numpy as np
 from conn import conn_mat
 
-def optimize_rectangle_placement(x, nrows, ncols, penalty, temp):
+def optimize_rectangle_placement(x, nrows, ncols, penalty, temp, test = False):
     """                     
 
     The x vector has at index i the element j. The interaction energy
@@ -39,13 +39,14 @@ def optimize_rectangle_placement(x, nrows, ncols, penalty, temp):
             I[i, i] = 0
         return I
 
-#    rpd = rectangle_pairs(nrows, ncols)
-#    C = conn_mat(rpd, nrows, ncols)
-    C = np.eye(nseats, nseats, -1) + np.eye(nseats, nseats, 1) # this is equivalent to a linear arrangement
-    # periodic matrix (for circular arrangement)
-    C[nseats - 1, 0] = 1
-    C[0, nseats - 1] = 1
-    # this makes an idempotent matrix, C^2 = C
+    if test:
+        C = np.eye(nseats, nseats, -1) + np.eye(nseats, nseats, 1) # this is equivalent to a linear arrangement
+        C[nseats - 1, 0] = 1
+        C[0, nseats - 1] = 1
+        # periodic matrix (for circular arrangement)
+        # this makes an idempotent matrix, C^2 = C
+    else:
+        C = conn_mat(nrows, ncols)
 
     counter = 0
 
@@ -148,6 +149,7 @@ if __name__ == '__main__':
     nseats = m*n
     nstudents = len(x)
 
+    # compare energies calculated by two routines
     egy = [penalty(i, j) for i, j in np.vstack((x, np.roll(x, -1))).transpose()]
     egy = sum(egy)
 
@@ -170,10 +172,11 @@ if __name__ == '__main__':
     print(egy, egy2/2)
     assert egy == egy2 / 2
 
-
+    # compare converged positions calculated by two routines
     ocp = optimize_circle_placement(student_scores, penalty, temp)
     print(ocp)
-    orp = optimize_rectangle_placement(student_scores, m, n, penalty, temp)
+    orp = optimize_rectangle_placement(student_scores, m, n, penalty, temp, test=True)
     print(np.ravel(orp))
-    #orp = optimize_rectangle_placement(student_scores, m + 1, n, penalty, temp)
-    #print(np.ravel(orp))
+
+    orp = optimize_rectangle_placement(student_scores, m, n, penalty, temp)
+    print(orp)

@@ -9,16 +9,28 @@ wgm = wgm.groupby(level=0).agg(np.mean)
 z = wgm.corr()  # correlation among student performances on all assesments
 
 def penalty(i,j):
-    return z[i+1].loc[j+1]
+    if i == 0 or j == 0:
+        return 0
+    return z[i].loc[j]
 
 nstudents = wgm.shape[1]
 x = list(range(1, nstudents)) # student ids, initialize ordered
-opt = optimize_circle_placement(x, penalty)
+
+# make a temperature based on the average interaction energy
+# this is correlation coefficient excluding self-correlation
+temp = 0
+for i in x:
+    for j in range(1, i):
+        temp += penalty(i, j)
+temp /= nstudents**2 / 2
+temp /= 10
+opt = optimize_circle_placement(x, penalty, temp=0.05)
 print(opt)
 
 for i in range(len(opt) - 2):
-    print(opt[i],opt[i +1], penalty(opt[i],opt[i+1])/z.mean().mean())
-    print(opt[i+1],opt[i +2], penalty(opt[i+1],opt[i+2])/z.mean().mean())
+    for j in 1, 2:
+        s1, s2, e = opt[i + j - 1],opt[i + j], penalty(opt[i + j - 1],opt[i+j])/z.mean().mean()
+        print(f'{s1:n} {s2:n} {e:.1f}')
 
-orc = optimize_rectangle_placement(x, 4, 3, penalty)
+orc = optimize_rectangle_placement(x, 4, 3, penalty, temp=0.05)
 print(orc)
