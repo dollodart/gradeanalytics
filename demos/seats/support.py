@@ -66,7 +66,7 @@ def optimize_rectangle_placement(x, nrows, ncols, penalty, temp, test = False):
         arg = (e2 - e) / 2
         arg /= temp
 
-        if np.exp(arg) < 0.5:
+        if np.exp(arg) > np.random.random_sample():
             counter = 0
         else:
             ar[p1], ar[p2] = ar[p2], ar[p1]
@@ -112,7 +112,7 @@ def optimize_circle_placement(x, penalty, temp = 1):
         p4 = penalty(x[mnm - 1], x[mnm])
 
         arg = (sm + p1 + p2 + p3 + p4 - sm0) / temp
-        if np.exp( arg ) < 0.5:
+        if np.exp( arg ) > np.random.random_sample():
             egy[mxm] = p1
             egy[mxm - 1] = p2
             egy[mnm] = p3
