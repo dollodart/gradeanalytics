@@ -1,10 +1,8 @@
-from gradeanalytics import data_frame as df
+from gradeanalytics import data_frame as df, weighted_key as wk
 import pandas as pd
 import matplotlib.pyplot as plt
 
-y = df['Grading Importance', 'Total'] * df['Grading Importance', 'Weight']
-df['Grading Importance', 'Frac Cont'] = y / y.sum()
-
+df['Grading Importance', 'Frac Cont'] = wk / wk.sum()
 r = (df.loc['HW'].groupby(('Assessment Metadata', 'Difficulty')).agg('sum')
     ['Grading Importance', 'Frac Cont'])
 

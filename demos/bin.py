@@ -1,36 +1,31 @@
-from gradeanalytics import letter_percentages, letter_grades, weighted_grade_matrix as wgm
+from gradeanalytics import letter_percentages, letter_grades, weighted_points as wpm, weighted_key as wk
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.signal import find_peaks
 from scipy.stats import normaltest
 
-def abcdf(file=None):
+def abcdf(wpm=wpm,wk=wk):
     """
 
-    Bin the students total grades into the classical ABCDF system.
+    Bin the students total grades into the classical ABCDF system by percentage of total points earned.
 
     """
 
-    sm = wgm.sum()
+    sm = wpm.sum() / wk.sum()
     grades = pd.cut(100.* sm, 
             letter_percentages, 
             labels=letter_grades[:-1])
 
     # sum collapses to the student IDs
     # index is "problem subnumber" from previous index
-    grades.name = 'Letter Grade'
+    grades.name = 'Grade by Weighted Percentage Earned'
     grades.index.name = 'Scoring ID'
 
-    if file is None:
-        file = open('final_grades_table.tex', 'w')
-    grades.to_latex(file)
-    file.close()
+    return grades
 
-    return None
-
-def abcdf_vis(axs=None):
-    sm = wgm.sum().sort_values(axis=0) * 100.
+def abcdf_vis(wpm=wpm, wk=wk, axs=None):
+    sm = wpm.sum().sort_values(axis=0) * 100. / wk.sum()
     sorted_student_numbers = sm.index.values
 
     if axs is None:
@@ -58,45 +53,50 @@ def abcdf_vis(axs=None):
 
     return ax1, ax2, ax3
 
-def rank():
+def rank(wpm=wpm,wk=wk):
     """
 
     Returns the class ranks for each student.
 
     """
 
-    sm = wgm.sum().sort_values(axis=0) * 100.
-    nstudents = wgm.shape[1]
-    return ["{} {}".format(*x) for x in zip(sm.index,reversed(range(nstudents)))]
+    sm = wpm.sum().sort_values(axis=0,ascending=False)
+    xm = pd.Series(range(len(sm)))
+    xm.index = sm.index
+    xm.name = 'Rank'
+    xm.index.name = 'Student ID'
+    return xm
 
-def coarse_rank():
+def coarse_rank(wpm=wpm,wk=wk):
     """
     
     Assign the same number of each grade type.
     This is just a coarse version of class rank.
 
     """
-    sm = wgm.sum().sort_values(axis=0) * 100.
-    nstudents = wgm.shape[1]
+    sm = wpm.sum().sort_values(axis=0,ascending=False)
+    nstudents = wpm.shape[1]
     ngrades = len(letter_grades)
     nstudents_per_grade = nstudents // ngrades
 
     l = []
-    c = 0
-    i = 0
+    c = i = 0
     letter_grades[::-1] = letter_grades
-    for _ in range(wgm.shape[1]):
+    for _ in range(wpm.shape[1]):
         if c > nstudents_per_grade:
             c = 0
             i += 1
         l.append(letter_grades[i])
         c += 1
     l[::-1] = l
+    l = pd.Series(l)
+    l.index = sm.index
+    l.index.name = 'Student ID'
+    l.name = 'Coarse Rank'
+    return l
 
-    return ["{} {}".format(*x) for x in zip(sm.index,l)]
 
-
-def bell_curve(): 
+def bell_curve(wpm=wpm,wk=wk,debug=False): 
     """                                                   
 
     If the student grade distribution is unimodal it may be desired to give
@@ -132,15 +132,9 @@ def bell_curve():
 
     """
 
-    sm = wgm.sum().sort_values(axis=0) * 100.
+    sm = wpm.sum().sort_values(axis=0,ascending=False)
     mean = sm.mean()
     std = sm.std()
-    peaks, _ = find_peaks(np.histogram(sm)[0])
-
-    if len(peaks) > 1:
-        #raise Warning("Multimodal distribution")
-        print(f'multimodal distribution with {len(peaks)} peaks')
-
     res = normaltest(sm)
 
     if res.pvalue < 0.05:
@@ -158,21 +152,28 @@ def bell_curve():
     spacing = std * 2 / 3
     bins = [mean - spacing * (i - 1 / 2) for i in r1][::-1] \
         + [mean + spacing * (i - 1 / 2) for i in r2]
-    high = (sm > mean + spacing * 0.5).sum()
-    low = (sm < mean - spacing * 0.5).sum()
-    med = sm.size - (high + low)
-    scs = [low, med, high]
-    print("student distribution: {}% low, {}% medium, {}% high".format(
-    *[100 * x / sum(scs) for x in scs]))
-    res = pd.cut(sm, bins, labels=letter_grades[::-1])
-    return res
+    if debug:
+        high = (sm > mean + spacing * 0.5).sum()
+        low = (sm < mean - spacing * 0.5).sum()
+        med = sm.size - (high + low)
+        scs = [low, med, high]
+        print("student distribution: {}% low, {}% medium, {}% high".format(
+        *[100 * x / sum(scs) for x in scs]))
+    s = pd.cut(sm, bins, labels=letter_grades[::-1])
+    s.index.name = 'Student ID'
+    s.name = 'Bell Curve Assigned Grade'
+    return s
 
 if __name__ == '__main__':
-#    abcdf()
-#    abcdf_vis()
-#    plt.show()
-#    for i in rank():
-#        print(i)
-#    for i in coarse_rank():
-#        print(i)
+
+    grades = abcdf()
+    with open('final_grades_table.tex', 'w') as _:
+        grades.to_latex(_)
+    grades.to_latex(file)
+
+    abcdf_vis()
+    plt.show()
+
+    print(rank())
+    print(coarse_rank())
     print(bell_curve())

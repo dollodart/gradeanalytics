@@ -43,24 +43,25 @@ The sample data is obtained by a normal distributions for fraction of points ear
 The data frame contains all the information of the data spreadsheet. Some copies of the dataframe parts are made in the global space for convenient access:
 
 - `full_data_frame` is the data frame prior to removing all dates for which there are no entries, used for predicting future performance
-- `point_matrix` contains the points for each assignment by each student, which is used to report newly made grades to students (since they should have an understanding for the weights of classes, and this is more information when different assesments in the same class have different numbers of points)
-- `weighted_point_matrix` is the unnormalized contribution of each assesment for each student to their final grade
+- `points` contains the points for each assignment by each student, which is used to report newly made grades to students (since they should have an understanding for the weights of classes, and this is more information when different assesments in the same class have different numbers of points)
+- `weighted_points` is the unnormalized contribution of each assesment for each student to their final grade.
 - `grade_matrix` contains the percent of total points scored for each assignment by each student, which is valuable for analyzing performance on each assesment, but is generally unrelated to the final score
-- `weighted_grade_matrix` contains the weighted contribution to the total for each assignment by each student, which is valuable for calculating course performance and importance metrics where the point weighting should be taken into account. The sum gives the students final grade as a fraction.
+- `weighted_grades` contains the fraction earned in the weighted contribution. This valuable for calculating course performance and importance metrics where the point weighting should be taken into account. 
+- `true_grades` uses the correct normalization factor of the sum of all points in the weighted key. This gives the fraction of all weighted points earned, and is used to directly calculate grades based on common fraction assignments (e.g., 85% of points is a B).
 
-The `grade_matrix` is not used to obtain the `weighted_grade_matrix` since different assessments have different numbers of points independent of their point weight.
+The `grades` is different from `weighted_grades` since different assessments have different numbers of points independent of their point weight. The `true_grades` gives the contribution normalized by the total number of weighted points, which gives a fraction of total (weighted) points often used for assigning grades in absolute scale when summed. However, for relative grading, the `weighted_points` frame can be directly used.
 
 The purpose of having two ways to weight assignments, a per point weight and a number of points, rather than just one, is the following:
 
 1. If only point totals are used to weigh assignments, graders have little freedom in defining point counts and often must use fractional points on homework assignments which are much longer (have more problems) and must be assigned fewer points not just for being less important, but more numerous than test questions.
 2. If only assignment weights are used, e.g., the fractional score is weighted, then points have no intuitive meaning across assignments, unlike, e.g., a point in the final being worth some times more than a point in homework.
 
-The added difficulty of calculating how important the assignment or any one of its problems is to the final grade is done by the program which of course can be shared with students. I have called this quantity the grade contribution, both for the total points so weighted and for the student's score so weighted. The `weighted_point_matrix` may be called the `contribution_matrix` in light of this.
+The added difficulty of calculating how important the assignment or any one of its problems is to the final grade is done by the program which of course can be shared with students. I have called this quantity the grade contribution, both for the total points so weighted (given the variable `weighted_key`) and for the student's score so weighted. The `weighted_points` may be called the `contribution` in light of this.
 
 ```
-r1 = full_data_frame['Grading Importance', 'Weight']*full_data_frame['Grading Importance', 'Total']
+wk = full_data_frame['Grading Importance', 'Weight']*full_data_frame['Grading Importance', 'Total']
 print('% contribution to final grade')
-print((r1 / r1.sum()*100).round(1))
+print((wk / wk.sum()*100).round(1))
 print('compare')
 r2 = full_data_frame['Grading Importance', 'Total'] / full_data_frame['Grading Importance', 'Total'].sum()
 r3 = full_data_frame['Grading Importance', 'Weight'] / full_data_frame['Grading Importance', 'Weight'].sum()

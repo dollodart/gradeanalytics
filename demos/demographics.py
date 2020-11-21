@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from gradeanalytics import grade_matrix as gm,\
-        weighted_grade_matrix as wgm,\
+from gradeanalytics import grades as gm,\
+        true_grades as tgm,\
         student_frame as sf
 
 from scipy.stats import ttest_ind
@@ -20,7 +20,7 @@ def democorr(field, ax=None):
     if ax is None:
         fig, ax = plt.subplots(nrows=1,ncols=1)
 
-    sm = wgm.sum() * 100.
+    sm = tgm.sum() * 100.
     sf['grades'] = sm
 
     if isinstance(field, list):
@@ -60,7 +60,7 @@ def demogend(income_factors_func, ax=None):
     if ax is None:
         fig, ax = plt.subplots(nrows=1, ncols=1)
 
-    sm = gm.sum()
+    sm = tgm.sum()
     sf['dwgrades'] = sm*sf['income'].map(income_factors)
     g = sf.groupby('gender')
     y = g['dwgrades'].agg(np.mean)
@@ -97,7 +97,7 @@ def demorace(income_factors_func, ax=None):
 
     # ideally this would be done by broadcasting using a series or dictionary,
     # since it is categorical and not a continuous function
-    sm = wgm.sum()
+    sm = tgm.sum()
     sf['dwgrades'] = sm / sf['income'].map(income_factors)
     tukt = pairwise_tukeyhsd(sf['dwgrades'], 
         sf['race'] + '-' + sf['ethnicity'])
@@ -118,4 +118,4 @@ if __name__ == '__main__':
     tt, _ = demorace(income_factors)
     print(tt.summary())
 
-    #plt.show()
+    plt.show()

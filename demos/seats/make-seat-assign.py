@@ -1,7 +1,7 @@
 from support import optimize_circle_placement, optimize_rectangle_placement
 import pandas as pd
 import numpy as np
-from gradeanalytics import weighted_grade_matrix as wgm
+from gradeanalytics import weighted_grades as wgm
 
 # wgm = wgm.loc['HW'] 
 wgm = wgm.groupby(level=0).agg(np.mean)

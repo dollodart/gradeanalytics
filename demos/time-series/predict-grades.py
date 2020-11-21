@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from datetime import date, datetime, timedelta
-from gradeanalytics import full_data_frame as fdf, weighted_point_matrix as wpm
+from gradeanalytics import full_data_frame as fdf, weighted_points as wpm
 import pandas as pd
 pd.plotting.register_matplotlib_converters()
 

@@ -1,40 +1,41 @@
 import pandas as pd
 import numpy as np
-from gradeanalytics import point_matrix as pm,\
-        student_frame as sf, data_frame as df,\
-        grade_matrix as gm
+from gradeanalytics import points as pm,\
+        full_data_frame as fdf,\
+        grades as gm
 import matplotlib.pyplot as plt
 
-def dist1(assessment,ax=None,file=None):
+def dist1(assessment,df=pm):
     """
 
-    Plot the point distribution for a given assignment and print a table
-    sorted by the student ID, for reporting new results to students.
+    Return a table for the points earned in a given assessment.
 
     """
-    y = pm.loc[assessment].sum()
+    y = df.loc[assessment].sum()
+    y = y.sort_values()
+    return y
+
+
+def dist1_vis(assessment,df=pm,ax=None):
+    """
+
+    Plot the point distribution for a given assessment.
+
+    """
+
+    y = dist1(assessment, df)
 
     if ax is None:
         fig, ax = plt.subplots(nrows=1, ncols=1)
 
-    if file is not None:
-        sf['scores'] = y
-        sf = sf.sort_values(by='ID')
-        sf.to_latex(file, index=False,
-                columns=['ID','scores'])
-
-    #x, y = np.histogram(y.values,10)
-    #ax.plot(y[:-1], x)
-
-    #ax.hist(y.values) 
-
-    y = y.sort_values()
-    ax.set_yticks([])
-    ax.plot(y.values, range(len(y)))
+#    ax.set_yticks([])
+#    ax.plot(range(len(y)), y.cumsum())
+    
+    ax.hist(y,bins=y.max() - y.min())
 
     return ax
 
-def distn(assessment,ax=None):
+def distn_vis(assessment,df=gm,ax=None):
     """
 
     Get the mean and standard deviation for all problems for a given
@@ -42,8 +43,8 @@ def distn(assessment,ax=None):
 
     """
 
-    means = gm.loc[assessment].mean(axis=1)
-    stds = gm.loc[assessment].std(axis=1)
+    means = df.loc[assessment].mean(axis=1)
+    stds = df.loc[assessment].std(axis=1)
 
     x = ['-'.join([str(y) for y in x]) for x in means.index]
 
@@ -58,7 +59,7 @@ def distn(assessment,ax=None):
     plt.xticks(rotation=90)
     return ax
 
-def distaggn(assessment, ax = None):
+def distaggn_vis(assessment, df=pm, ax = None):
     """
 
     Get the mean and standard deviation for a set of aggregated assessments
@@ -66,13 +67,13 @@ def distaggn(assessment, ax = None):
 
     The points matrix is used since summing points and then dividing by the
     total number of points in each class, since each class has the same
-    weights, gives the fraction earned in that class
+    weights, gives the fraction earned in that class.
 
     """
 
-    means = pm.loc[assessment].groupby(level=0).agg(np.sum).mean(axis=1)
-    stds = pm.loc[assessment].groupby(level=0).agg(np.sum).std(axis=1)
-    ref = df.loc[assessment]['Grading Importance', 'Total'].groupby(level=0).agg(np.sum)
+    means = df.loc[assessment].groupby(level=0).agg(np.sum).mean(axis=1)
+    stds = df.loc[assessment].groupby(level=0).agg(np.sum).std(axis=1)
+    ref = fdf.loc[assessment]['Grading Importance', 'Total'].groupby(level=0).agg(np.sum)
     means = means / ref
     stds = stds / ref
     if ax is None:
@@ -83,13 +84,19 @@ def distaggn(assessment, ax = None):
         xerr=None,
         yerr=stds * 100,
         fmt='ko')
-    ax.set_xlabel('Assesment')
-    ax.set_ylabel('% of that Assesment Scored')
+    ax.set_xlabel('Assessment')
+    ax.set_ylabel('% of Assessment Points Scored')
     return ax
 
 if __name__ == '__main__':
     assessment = 'HW', 1
-    dist1(assessment)
-    #distn(assessment)
-    #distaggn(assessment)
+    #x = dist1(assessment)
+    #with open('assessment-scores.tex', 'w') as _:
+    #    x.to_latex(_, index=False,
+    #        columns=['ID','scores'])
+
+    
+    dist1_vis(assessment)
+    distn_vis(assessment)
+    distaggn_vis(assessment)
     plt.show()

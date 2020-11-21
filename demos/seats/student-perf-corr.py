@@ -6,7 +6,7 @@ from scipy.stats import linregress
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from gradeanalytics import weighted_grade_matrix as wgm
+from gradeanalytics import weighted_grades as wgm
 
 # choose coarser resolution by aggregation to some level
 wgm = wgm.groupby(level=0).agg(np.mean)
