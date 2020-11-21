@@ -1,10 +1,14 @@
 \documentclass{article}
 \usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{gensymb}
 \usepackage{booktabs}
 
 \begin{document}
 
-Let $m$ be the number of rows and $n$ be the number of columns, and $p = mn$ be the number of seats, which is generally equal to or slightly greater than the number of students. Define the connectivity matrix $C$ as the $p$-by-$p$ matrix which tells whether or not to seats are neighboring each other. When considering seats arranged in a circle, this matrix is the positive off-diagonal and negative off-diagonal, if positions are assigned in the natural way in sequential order around the circle. That is, the seat at position 2 is neighboring the seat at position 1 and also at position 3. This double counts interactions but can be avoided by using just one off diagonal, say the negative, which would have in column 2 an entry at row 3, at column 3 an entry at row 4, and thus account for all interactions.
+\section{Definition of Problem in Terms of Interaction and Connectivity Matrices}
+
+Let $m$ be the number of rows and $n$ be the number of columns in the classroom, and $p = mn$ be the number of seats, which is generally equal to or slightly greater than the number of students. Define the connectivity matrix $C$ as the $p$-by-$p$ matrix which tells whether or not to seats are neighboring each other. When considering seats arranged in a circle, this matrix is the positive off-diagonal and negative off-diagonal, if positions are assigned in the natural way in sequential order around the circle, with upper right and lower left terms for symmetry. That is, the seat at position 2 is neighboring the seat at position 1 and also at position 3. This double counts interactions but can be avoided by using just one off diagonal, say the negative, which would have in column 2 an entry at row 3, at column 3 an entry at row 4, and thus account for all interactions.
 
 The construction for an $m$-by-$n$ physical arrangement of the $p$-by-$p$ connectivity matrix can be accomplished by modular arithmetic, in particular, starting index at $0$ there are the rules as applied (in sequential order) to determine the values around the $i$th index depending on the $i \bmod n$ and $i/n$ (integral quotient) where $i \in [0, p)$.
 
@@ -34,9 +38,41 @@ $$p = \exp\left(-\frac{\sum(E) - \sum(E_0)}{T} \right) $$
 
 This is compared to a randomized value between 0 and 1 to determine if the step is taken. The value of $T$ is decisive in the probability of accepting a step. In physical systems, the temperature may be $25$ meV at room conditions, and bond energies may be order 1 eV. In any case the average value of the interaction function is important, which is calculated in the discrete case as $$\frac{1}{p^2} \sum_{i=0}^{p-1} \sum_{j=0}^{p-1} f(i,j) \,,$$ and some fraction of this can be chosen for the temperature. 
 
-\section{Computationally Efficient Implemenatation}
+\subsection{Possible Analytical Solutions}
 
-For nearest neighbor interactions, only those $s(x) \pm 1$ and $s(y)\pm 1$ need to be updated on swap. The entry point to the data structure can always be a unique ID, since randomizing positions is equivalent to randomizing IDs to swap. Because of this, a dictionary data structure for student ID to network element, where that network element has some number of connections like a doubly linked list, is needed.
+The problem can be stated as a minimization on some function which swaps elements of $\mathbf{I}$:
+%this presumes the swap operation can be achieved by some single matrix multiplication, but it's not obvious to me that that is the case
+%can one prove there is no single matrix operation that allows swapping of an arbitrary set of elements in a matrix? or that there is?
+$$\min_{f} \mathbf{C} \circ f(\mathbf{I})  $$
+
+Since $\mathbf{I} \in R^{p \times p}$, the swap is not affected just by swapping elements like it would in an $n \times m$ matrix corresponding to the seats. One has to update the entries for every pair of neighbors. Moreover this cannot be accomplished by matrix multiplication, since matrix multiplication generally operates identically on either rows or columns of the matrix it operates on (depending on left- or right-multiplication). Hence the minimization is with respect to a swapping function rather than, e.g., a permutation matrix.
+
+Since the interaction energy depends on the label, for the application process no analytical solution can be found, even in cases where there is a simple function giving the interaction energy in terms of the label, such as $I(x,y) = xy$. One can surmise that the solution to the problem of interaction would be, in the case of a circle constructed out of a range from $1$ to $n$, having opposite numbers across the interactions, e.g., $x_i + x_{i+1} \approx n$ for all $i$. But it is not a straightforward application of calculus to find the optimum configuration, and the problem as formulated by the minimization product of a vector and the permutation of a vector, $\min_{\mathbf{P}} \vec x \cdot \vec x$ is not helpful, as there is no analytical means by which to find an optimum permutation.
+
+\subsection{Enumeration of the Circular Arrangement Using Symmetry Reduction}
+In the test case of a circular geometry, there may be $9! = 362\,880$ arrangements. However, the circle is originless. Therefore there are 9 equivalent orderings for every given ordering, so the number of distinct arrangements is $9!/9 = 8! = 40\,320$.
+
+\subsection{Enumeration of the $3$-by-$3$ Case Using Symmetry Reduction}
+In the simplest case having all types of seating arrangements, the $3$-by-$3$ matrix, there are $9! = 362\,880$ arrangements. However, by the rotational symmetry of the square to 90\degree increments, some of these are not distinct, in the sense that the same nearest neighbors are had by the same students. The question is how to achieve a symmetry reduction in the arrangements so that as few as possible are tested in an enumeration of the seating arrangements.
+
+In the case where there is one center position, 4 edge positions, and 4 corner positions, then combinations, ignoring permutations in the edges and corner positions, can be found. This has no connection information, though, and undercounts the number of distinct arrangements. It is at least easy to calculate by the multinomial theorem, giving $9!/4!^2 = 630$. The advantage here is it becomes only necessary to consider, for a given set of center, edge, and corner assignments, how many distinct permutations of these exist, and multiply the combinations by that.
+
+The combinations of edge and corner assignments follows from the fact that every edge must have $2$ corners and every corner must have $2$ edges. Beginning with $4$ corners and $4$ edges, one can assign one edge to one corner to make $4$ corner-edge pairs. Those corner-edge pairs can then be be paired to make half-squares, for which the pairing to make the whole square is determined. There are $16$ corner-edge pairs possible, though the combinations of them are not $16^4$ since it is a one-to-one pairing, no duplicates. In which case the combinatoric formula, considering each corner to be a place and each edge to be something to permute in those places, gives $4! = 24$ number of distinct corner-edge pair assignments. The pairing of the corner-edge pairs to half-squares has $3$ distinct pairings, however, seeing as one has already permuted the inputs, there may be a problem of doubly permuting. In any case an upper bound of $72 \times 9 = 648$, since there are 9 selections of the center seat, on the distinct permutations. But the allocation of people to corners and edges was not accounted for--the question is how many ways are there to assign from 8 elements 2 groupings of 4 elements, disregarding order. This is equivalent to asking how many combinations of 4 elements drawing from 8 there are, since the second grouping is determined by the first. In which case 8 choose 4 evaluates to $8!/4!^2 = 70$. Revising the upper bound to $45\, 360$, which is $1/8$ the number found by na\"ive permutation.
+
+\section{Minimum Size of the System for an Equilibrium of Variables to Exist}
+
+It is a result of statistical mechanics that only large systems, with many molecules (which are analogous to seats and students here), have an equilibrium, that is, will have constant properties like temperature and infrared spectrum, even as the molecules shift among a very large number of equivalent microstates. That isn't the case for the model system of $9$ elements. Therefore the Monte Carlo method used will only bounce around energy states, with no convergence of its properties (like interaction energy) over any time scale. It is a result of statistical mechanics that the fluctuations scale as $1/\sqrt{N}$. Hence, with 1000 students.
+
+For very small sizes, like the model size, an enumeration of the configurations is possible. For large systems, the Monte Carlo method will work, though it might take a long time depending on how off the initial state is compared to the equilibrium state. The challenge is actually in systems of intermediate size, for which enumeration is prohibitive but the Monte Carlo method will not converge. In that case, you can never be sure the minimum (free) energy state has been found. But as long as you sample long enough, you can probably find one which is close, and the sample spaces for intermediate sizes are much smaller than the ones for large sizes.
+
+\section{Deterministic Greedy Algorithm}
+This won't give the energy minimum, but it at least can be used to give an initial condition.
+
+Evaluate all pairwise interactions. This isn't that expensive, even for 500 students it is only 250,000 operations. And it anyway needs to be done to construct the interaction matrix. Then sort the pairs by interaction energy. Take the lowest energy pair and put it in the center. Enclose this pair by selecting the lowest energy partners to each one, ignoring the interactions within the shell. Then do another enclosure, again greedily building the shell only considering the shells interactions to the inner shell. In the case of a non-square, you need to "seed" with the right shape or account for the fact that the growing shape will hit some edges without filling all seats/placing all students. 
+
+\section{Computationally Efficient Implemenatation of Energy Evaluation}
+
+For nearest neighbor interactions, only those $s(x) \pm 1$ and $s(y) \pm 1$ need to be updated on swap. The entry point to the data structure can always be a unique ID, since randomizing positions is equivalent to randomizing IDs to swap. Because of this, a dictionary data structure for student ID to network element, where that network element has some number of connections like a doubly linked list, is needed.
 
 \begin{enumerate}
     \item Randomly select 2 student IDs
@@ -45,4 +81,36 @@ For nearest neighbor interactions, only those $s(x) \pm 1$ and $s(y)\pm 1$ need 
     \item Compute energy and decide to keep or reverse swap
 \end{enumerate}
 
+\appendix
+
+\section{Optimum Arrangements}
+\subsection{Circular Geometry}
+\begin{itemize}
+    \item Penalty Function $xy$
+    \item Items $1, 2, \ldots, 9$
+    \item Optimum arrangement: 3, 6, 5, 4, 7, 2, 9, 1, 8 (any shift of this is valid, since there is no origin)
+    \item Optimum energy: 338
+\end{itemize}
+
+The energy landscape is sigmoidal.
+
+\subsection{Rectangular Geometry}
+
+\begin{itemize}
+    \item Penalty Function $xy$
+    \item Items $1, 2, \ldots, 9$
+    \item Optimum arrangement (there are 40 permutations with this energy): 
+        % some number > 1 of distinct permutations with this energy?
+        \begin{equation}
+        \begin{pmatrix}
+            6 & 3 & 7 \\
+            5 & 1 & 4 \\
+            8 & 2 & 9
+        \end{pmatrix}
+        \end{equation}
+    \item Optimum energy: 592
+\end{itemize}
+
+The energy landscape is also sigmoidal.
+%there is naturally the question, provided the energy landscape, what is the number of iterations required? It must be said that sigmoidal is the landscape seen when configurations are ordered by their energy. randomly ordering configurations will give a scatter. it may not be possible to order configuration such that neighboring configurations are 1 step away on 1 axis, or at least to do this in a way where all configurations which are 1 step away from each other are at the same point of the line
 \end{document}

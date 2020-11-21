@@ -1,5 +1,6 @@
 import numpy as np
 from conn import conn_mat
+from time import sleep
 
 def optimize_rectangle_placement(x, nrows, ncols, penalty, temp, test = False):
     """                     
@@ -43,10 +44,12 @@ def optimize_rectangle_placement(x, nrows, ncols, penalty, temp, test = False):
         C = np.eye(nseats, nseats, -1) + np.eye(nseats, nseats, 1) # this is equivalent to a linear arrangement
         C[nseats - 1, 0] = 1
         C[0, nseats - 1] = 1
+        min_energy = 338
         # periodic matrix (for circular arrangement)
         # this makes an idempotent matrix, C^2 = C
     else:
         C = conn_mat(nrows, ncols)
+        min_energy = 592
 
     counter = 0
 
@@ -63,15 +66,16 @@ def optimize_rectangle_placement(x, nrows, ncols, penalty, temp, test = False):
         Io = I.copy()
         I = calc(ar, penalty)
         e2 = (C * I).sum()
+        print(f'e={e2},e-emin={e2-min_energy}')
         arg = (e2 - e) / 2
         arg /= temp
 
+#        print(np.exp(arg), counter); sleep(0.1)
         if np.exp(arg) > np.random.random_sample():
-            counter = 0
+            counter += 1
         else:
             ar[p1], ar[p2] = ar[p2], ar[p1]
             I = Io
-            counter += 1
 
     seats = np.zeros((nrows,ncols))
     for counter, stu in enumerate(ar):
@@ -81,7 +85,7 @@ def optimize_rectangle_placement(x, nrows, ncols, penalty, temp, test = False):
     return seats
 
 
-def optimize_circle_placement(x, penalty, temp = 1): 
+def optimize_circle_placement(r, penalty, temp = 1): 
 
     """
 
@@ -89,44 +93,43 @@ def optimize_circle_placement(x, penalty, temp = 1):
     due to the element j at index i with its neighbors at i-1, say a,
     and i+1, say b, must be given by penalty(j, a) and penalty(j, b).
 
+    Convergence criterion is taken to be number of swaps equal to number of students.
+
     """
 
-    num = len(x)
-    egy = [penalty(i, j) for i, j in np.vstack((x, np.roll(x, -1))).transpose()]
-    sm = sum(egy)
-    mxm = np.argmax(egy)
-    mnm = np.argmin(egy)
-    counter = 0
+    n = len(r)
+    counter = y = 0
 
-    while True:
-        mxm = np.random.randint(0, num)
-        mnm = np.random.randint(0, num)
+    # initialization
 
-        sm0 = sm
-        sm -= egy[mxm] + egy[mxm - 1] + egy[mnm] + egy[mnm - 1]
-        x[mxm], x[mnm] = x[mnm], x[mxm]
+    while counter < n**2:
+        x = np.random.randint(0, n)
+        while x == y:
+            y = np.random.randint(0, n)
 
-        p1 = penalty(x[mxm], x[(mxm + 1) % num])
-        p2 = penalty(x[mxm - 1], x[mxm])
-        p3 = penalty(x[mnm], x[(mnm + 1) % num])
-        p4 = penalty(x[mnm - 1], x[mnm])
+        p10 = penalty(r[x], r[(x + 1) % n])
+        p20 = penalty(r[x - 1], r[x])
+        p30 = penalty(r[y], r[(y + 1) % n])
+        p40 = penalty(r[y - 1], r[y])
+        e0 = p10 + p20 + p30 + p40
 
-        arg = (sm + p1 + p2 + p3 + p4 - sm0) / temp
-        if np.exp( arg ) > np.random.random_sample():
-            egy[mxm] = p1
-            egy[mxm - 1] = p2
-            egy[mnm] = p3
-            egy[mnm - 1] = p4
-            counter = 0
-        else:
-            x[mnm], x[mxm] = x[mxm], x[mnm]
-            counter += 1
+        p1 = penalty(r[x], r[(y + 1) % n])
+        p2 = penalty(r[y - 1], r[x])
+        p3 = penalty(r[y], r[(x + 1) % n])
+        p4 = penalty(r[x - 1], r[y])
+        e1 = p1 + p2 + p3 + p4
 
-        sm += egy[mxm] + egy[mxm - 1] + egy[mnm] + egy[mnm - 1]
-        if counter > num**2:
-            break
+        arg = -(e1 - e0) / temp
 
-    return x
+#        print(np.exp(arg), counter); sleep(0.1)
+        if np.exp(arg) > np.random.random_sample():
+            r[x], r[y] = r[y], r[x]
+            e0 = e1
+            counter +=1
+#        else:
+#            counter += 1
+
+    return r
 
 if __name__ == '__main__':
     m = n = 3
@@ -140,7 +143,8 @@ if __name__ == '__main__':
         for y in student_scores:
             temp += penalty(x,y)
     temp /= (m*n)**2
-    temp /= 10 # in physical systems, the ambient thermal energy, e.g., at room temperature of 25 meV, 
+    temp /= 1 # in physical systems, the ambient thermal energy, e.g., at room temperature of 25 meV, 
+    print(temp)
     # will be more than a factor of ten times less than, e.g., an adsorption energy
 
     # check energy calculation is the same between the two
@@ -150,10 +154,10 @@ if __name__ == '__main__':
     nstudents = len(x)
 
     # compare energies calculated by two routines
-    egy = [penalty(i, j) for i, j in np.vstack((x, np.roll(x, -1))).transpose()]
-    egy = sum(egy)
-
-    ar = np.array(x + [0] * (nseats - nstudents))
+#    egy = [penalty(i, j) for i, j in np.vstack((x, np.roll(x, -1))).transpose()]
+#    egy = sum(egy)
+#
+#    ar = np.array(x + [0] * (nseats - nstudents))
     def calc(ar, penalty):
         I = np.zeros((nseats, nseats))
         for i in range(nseats):
@@ -161,22 +165,30 @@ if __name__ == '__main__':
                 I[i, j] = penalty(ar[i], ar[j])
             I[i, i] = 0
         return I
+#
+#    C = np.eye(nseats, nseats, -1) + \
+#        np.eye(nseats, nseats, 1) # this is equivalent to a linear arrangement
+#    C[0, -1] = 1
+#    C[-1, 0] = 1
+#    I = calc(ar, penalty)
+#    egy2 = C*I
+#    egy2 = egy2.sum()
+#    print(egy, egy2/2)
+#    assert egy == egy2 / 2
 
-    C = np.eye(nseats, nseats, -1) + \
-        np.eye(nseats, nseats, 1) # this is equivalent to a linear arrangement
-    C[0, -1] = 1
-    C[-1, 0] = 1
-    I = calc(ar, penalty)
-    egy2 = C*I
-    egy2 = egy2.sum()
-    print(egy, egy2/2)
-    assert egy == egy2 / 2
+#    import itertools as it
+#    e = []
+#    C = conn_mat(m, n)
+#    for ar in it.permutations(x):
+#        I = calc(ar, penalty)
+#        e.append( (ar,  (C*I).sum()) )
+
 
     # compare converged positions calculated by two routines
-    ocp = optimize_circle_placement(student_scores, penalty, temp)
-    print(ocp)
+#    ocp = optimize_circle_placement(student_scores, penalty, temp)
+#    print(ocp)
     orp = optimize_rectangle_placement(student_scores, m, n, penalty, temp, test=True)
     print(np.ravel(orp))
-
-    orp = optimize_rectangle_placement(student_scores, m, n, penalty, temp)
-    print(orp)
+#
+#    orp = optimize_rectangle_placement(student_scores, m, n, penalty, temp)
+#    print(orp)

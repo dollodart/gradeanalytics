@@ -10,7 +10,7 @@ z = wgm.corr()  # correlation among student performances on all assesments
 
 def penalty(i,j):
     if i == 0 or j == 0:
-        return 0
+        return -1 # this is the minimum correlation coefficient
     return z[i].loc[j]
 
 nstudents = wgm.shape[1]
