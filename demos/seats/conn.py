@@ -68,12 +68,79 @@ def conn_mat(m,n):
             C[i, i + m - 1] = 1
     return C
 
+class Seat:
+    def __init__(self, number):
+        self.number = number
+        self.sid = number
+        self.adjs = []
+    def __eq__(self, other):
+        return self.number == other.number
+
+energies = np.outer(range(10),range(10))
+assert (energies == energies.transpose()).all()
+def energy(i, j):
+    return energies[i,j]
+
+# evaluate energy
+def eval_energy(seats):
+    e = 0
+    for s in seats:
+        for a in s.adjs:
+            e += energy(s.sid, a.sid)
+    return e / 2
+
+def eval_energy_diff(seats, i, j):
+    """
+
+    Evaluate energy difference of a hypothetical swap.  Applies in the
+    case the two seats being swapped share neighbors, are neighbors, or
+    are the same.
+
+    """
+    e1 = e2 = 0
+    si = seats[i]
+    sj = seats[j]
+    for s in si.adjs:
+        e1 += energy(s.sid, si.sid)
+        if s == sj:
+            e2 += energy(s.sid, si.sid)
+        else:
+            e2 += energy(s.sid, sj.sid)
+    for s in sj.adjs:
+        if s == si:
+            e2 += energy(s.sid, sj.sid)
+        else:
+            e2 += energy(s.sid, si.sid)
+        e1 += energy(s.sid, sj.sid)
+    return e1 - e2
+
 if __name__ == '__main__':
     C1 = conn_mat(3,3)
     C2 = conn_mat(3,4)
     C3 = conn_mat(4,3)
-    print(C1,C2,C3, sep='\n')
+    print(C1, C2, C3, sep='\n')
 
-    from pandas import DataFrame
-    DataFrame(C1,dtype=int).to_latex('3-by-3.tex')
+    assert (C1 == C1.transpose()).all()
+    assert (C2 == C2.transpose()).all()
+    assert (C3 == C3.transpose()).all()
 
+    seats = [Seat(x) for x in range(C1.shape[1])]
+    for counter, row in enumerate(C1):
+        for counter2, value in enumerate(row):
+            if value > 0:
+                seats[counter].adjs.append(seats[counter2])
+
+    # swap seats, test energy evaluation
+    e0 = eval_energy(seats)
+    i = 0; j = 1
+    seats[i].sid, seats[j].sid = seats[j].sid, seats[i].sid
+    e1 = eval_energy(seats)
+    assert e1 - e0 == eval_energy_diff(seats, i, j)
+    seats[i].sid, seats[j].sid = seats[j].sid, seats[i].sid
+    e0again = eval_energy(seats)
+    assert e0 == e0again
+    assert e0 - e1 == eval_energy_diff(seats, i, j)
+    seats[i].sid, seats[j].sid = seats[j].sid, seats[i].sid
+
+#    from pandas import DataFrame
+#    DataFrame(C1,dtype=int).to_latex('3-by-3.tex')
