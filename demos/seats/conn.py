@@ -76,20 +76,30 @@ class Seat:
     def __eq__(self, other):
         return self.number == other.number
 
+def construct_seats(m, n):
+    """Return a list of Seat objects for the given rectangular geometry."""
+    C = conn_mat(m, n)
+    seats = [Seat(x) for x in range(C.shape[1])]
+    for counter, row in enumerate(C):
+        for counter2, value in enumerate(row):
+            if value > 0:
+                seats[counter].adjs.append(seats[counter2])
+    return seats
+
 energies = np.outer(range(10),range(10))
 assert (energies == energies.transpose()).all()
-def energy(i, j):
+def test_energy(i, j):
     return energies[i,j]
 
 # evaluate energy
-def eval_energy(seats):
+def eval_energy(seats, energy=test_energy):
     e = 0
     for s in seats:
         for a in s.adjs:
             e += energy(s.sid, a.sid)
     return e / 2
 
-def eval_energy_diff(seats, i, j):
+def eval_energy_diff(seats, i, j, energy=test_energy):
     """
 
     Evaluate energy difference of a hypothetical swap.  Applies in the
@@ -124,11 +134,7 @@ if __name__ == '__main__':
     assert (C2 == C2.transpose()).all()
     assert (C3 == C3.transpose()).all()
 
-    seats = [Seat(x) for x in range(C1.shape[1])]
-    for counter, row in enumerate(C1):
-        for counter2, value in enumerate(row):
-            if value > 0:
-                seats[counter].adjs.append(seats[counter2])
+    seats = construct_seats(3, 3)
 
     # swap seats, test energy evaluation
     e0 = eval_energy(seats)
