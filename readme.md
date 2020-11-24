@@ -42,14 +42,13 @@ The sample data is obtained by a normal distributions for fraction of points ear
 # Data Frame
 The data frame contains all the information of the data spreadsheet. Some copies of the dataframe parts are made in the global space for convenient access:
 
-- `full_data_frame` is the data frame prior to removing all dates for which there are no entries, used for predicting future performance
-- `points` contains the points for each assignment by each student, which is used to report newly made grades to students (since they should have an understanding for the weights of classes, and this is more information when different assesments in the same class have different numbers of points)
+- `full_data_frame` is the data frame prior to removing all dates for which there are no entries, used for predicting future performance.
+- `points` contains the points for each assignment by each student, which is used to report newly made grades to students (since they should have an understanding for the weights of classes, and this is more information when different assesments in the same class have different numbers of points).
 - `weighted_points` is the unnormalized contribution of each assesment for each student to their final grade.
-- `grade_matrix` contains the percent of total points scored for each assignment by each student, which is valuable for analyzing performance on each assesment, but is generally unrelated to the final score
-- `weighted_grades` contains the fraction earned in the weighted contribution. This valuable for calculating course performance and importance metrics where the point weighting should be taken into account. 
-- `true_grades` uses the correct normalization factor of the sum of all points in the weighted key. This gives the fraction of all weighted points earned, and is used to directly calculate grades based on common fraction assignments (e.g., 85% of points is a B).
+- `grades` contains the percent of total points scored for each assignment by each student, which is valuable for analyzing performance on each assesment, but is generally unrelated to the final score.
+- `true_grades` uses the correct normalization factor of the sum of all points in the weighted key. This gives the fraction of all weighted points earned, and is used to directly calculate grades based on common fraction assignments (e.g., 85% of points is a B) by summing.
 
-The `grades` is different from `weighted_grades` since different assessments have different numbers of points independent of their point weight. The `true_grades` gives the contribution normalized by the total number of weighted points, which gives a fraction of total (weighted) points often used for assigning grades in absolute scale when summed. However, for relative grading, the `weighted_points` frame can be directly used.
+The `true_grades` gives the contribution normalized by the total number of weighted points, which gives a fraction of total (weighted) points often used for assigning grades in absolute scale when summed. However, for relative grading, the `weighted_points` frame can be directly used. Note that `grades` is normalized by a Series (the key) using broadcasting rules, while `true_grades` is normalized by a scalar for total count of weighted points.
 
 The purpose of having two ways to weight assignments, a per point weight and a number of points, rather than just one, is the following:
 
@@ -60,10 +59,10 @@ The added difficulty of calculating how important the assignment or any one of i
 
 ```
 wk = full_data_frame['Grading Importance', 'Weight']*full_data_frame['Grading Importance', 'Total']
-print('% contribution to final grade')
-print((wk / wk.sum()*100).round(1))
-print('compare')
 r2 = full_data_frame['Grading Importance', 'Total'] / full_data_frame['Grading Importance', 'Total'].sum()
 r3 = full_data_frame['Grading Importance', 'Weight'] / full_data_frame['Grading Importance', 'Weight'].sum()
-print(r2); print(r3)
+n1 = (r2*100).round(1).rename('Point Fraction')
+n2 = (r3*100).round(1).rename('Weight Fraction')
+n3 = ((r2*r3*100)/(r2*r3).sum()).round(1).rename('Point-Weight Fraction')
+print(concat((n1,n2,n3),axis=1))
 ```

@@ -1,19 +1,19 @@
 from support import optimize_circle_placement, optimize_rectangle_placement
 import pandas as pd
 import numpy as np
-from gradeanalytics import weighted_grades as wgm
+from gradeanalytics import grades as gm
 
-# wgm = wgm.loc['HW'] 
-wgm = wgm.groupby(level=0).agg(np.mean)
+# gm = gm.loc['HW'] 
+gm = gm.groupby(level=0).agg(np.mean)
 
-z = wgm.corr()  # correlation among student performances on all assesments
+z = gm.corr()  # correlation among student performances on all assesments
 
 def penalty(i,j):
     if i == 0 or j == 0:
         return -1 # this is the minimum correlation coefficient
     return z[i].loc[j]
 
-nstudents = wgm.shape[1]
+nstudents = gm.shape[1]
 x = list(range(1, nstudents)) # student ids, initialize ordered
 
 # make a temperature based on the average interaction energy

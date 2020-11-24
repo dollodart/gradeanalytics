@@ -6,12 +6,12 @@ from scipy.stats import linregress
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from gradeanalytics import weighted_grades as wgm
+from gradeanalytics import grades as gm
 
 # choose coarser resolution by aggregation to some level
-wgm = wgm.groupby(level=0).agg(np.mean)
-# wgm = wgm.loc['HW'] # choose subset of highest resolution
-z = wgm.corr()
+gm = gm.groupby(level=0).agg(np.mean)
+# gm = gm.loc['HW'] # choose subset of highest resolution
+z = gm.corr()
 fig = plt.figure()
 ax = fig.add_subplot(111)
 cset = ax.imshow(np.tril(z))
