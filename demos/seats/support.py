@@ -49,7 +49,7 @@ def optimize_rectangle_placement(x, nrows, ncols, penalty, temp, test = False):
         # this makes an idempotent matrix, C^2 = C
     else:
         C = conn_mat(nrows, ncols)
-        min_energy = 592
+        min_energy = 592 # only for nrows = ncols = 3
 
     counter = 0
 
@@ -121,13 +121,12 @@ def optimize_circle_placement(r, penalty, temp = 1):
 
         arg = -(e1 - e0) / temp
 
-#        print(np.exp(arg), counter); sleep(0.1)
         if np.exp(arg) > np.random.random_sample():
             r[x], r[y] = r[y], r[x]
             e0 = e1
+            counter = 0
+        else:
             counter +=1
-#        else:
-#            counter += 1
 
     return r
 
@@ -185,10 +184,10 @@ if __name__ == '__main__':
 
 
     # compare converged positions calculated by two routines
-#    ocp = optimize_circle_placement(student_scores, penalty, temp)
-#    print(ocp)
-    orp = optimize_rectangle_placement(student_scores, m, n, penalty, temp, test=True)
-    print(np.ravel(orp))
+    ocp = optimize_circle_placement(student_scores, penalty, temp)
+    print(ocp)
+#    orp = optimize_rectangle_placement(student_scores, m, n, penalty, temp, test=True)
+#    print(np.ravel(orp))
 #
 #    orp = optimize_rectangle_placement(student_scores, m, n, penalty, temp)
 #    print(orp)

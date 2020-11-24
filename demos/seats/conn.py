@@ -69,9 +69,12 @@ def conn_mat(m,n):
     return C
 
 class Seat:
-    def __init__(self, number):
+    def __init__(self, number, sid = None):
         self.number = number
-        self.sid = number
+        if sid is None:
+            self.sid = number
+        else:
+            self.sid = sid
         self.adjs = []
     def __eq__(self, other):
         return self.number == other.number
@@ -137,16 +140,16 @@ if __name__ == '__main__':
     seats = construct_seats(3, 3)
 
     # swap seats, test energy evaluation
-    e0 = eval_energy(seats)
-    i = 0; j = 1
-    seats[i].sid, seats[j].sid = seats[j].sid, seats[i].sid
-    e1 = eval_energy(seats)
-    assert e1 - e0 == eval_energy_diff(seats, i, j)
-    seats[i].sid, seats[j].sid = seats[j].sid, seats[i].sid
-    e0again = eval_energy(seats)
-    assert e0 == e0again
-    assert e0 - e1 == eval_energy_diff(seats, i, j)
-    seats[i].sid, seats[j].sid = seats[j].sid, seats[i].sid
+    for i,j in (0,1), (0,5), (7,8), (3,4):
+        e0 = eval_energy(seats)
+        seats[i].sid, seats[j].sid = seats[j].sid, seats[i].sid
+        e1 = eval_energy(seats)
+        assert e1 - e0 == eval_energy_diff(seats, i, j)
+        seats[i].sid, seats[j].sid = seats[j].sid, seats[i].sid
+        e0again = eval_energy(seats)
+        assert e0 == e0again
+        assert e0 - e1 == eval_energy_diff(seats, i, j)
+        seats[i].sid, seats[j].sid = seats[j].sid, seats[i].sid
 
 #    from pandas import DataFrame
 #    DataFrame(C1,dtype=int).to_latex('3-by-3.tex')
