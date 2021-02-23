@@ -89,20 +89,15 @@ def construct_seats(m, n):
                 seats[counter].adjs.append(seats[counter2])
     return seats
 
-energies = np.outer(range(10),range(10))
-assert (energies == energies.transpose()).all()
-def test_energy(i, j):
-    return energies[i,j]
-
 # evaluate energy
-def eval_energy(seats, energy=test_energy):
+def eval_energy(seats, energy_func):
     e = 0
     for s in seats:
         for a in s.adjs:
-            e += energy(s.sid, a.sid)
+            e += energy_func(s.sid, a.sid)
     return e / 2
 
-def eval_energy_diff(seats, i, j, energy=test_energy):
+def eval_energy_diff(seats, i, j, energy_func):
     """
 
     Evaluate energy difference of a hypothetical swap.  Applies in the
@@ -114,17 +109,17 @@ def eval_energy_diff(seats, i, j, energy=test_energy):
     si = seats[i]
     sj = seats[j]
     for s in si.adjs:
-        e1 += energy(s.sid, si.sid)
+        e1 += energy_func(s.sid, si.sid)
         if s == sj:
-            e2 += energy(s.sid, si.sid)
+            e2 += energy_func(s.sid, si.sid)
         else:
-            e2 += energy(s.sid, sj.sid)
+            e2 += energy_func(s.sid, sj.sid)
     for s in sj.adjs:
         if s == si:
-            e2 += energy(s.sid, sj.sid)
+            e2 += energy_func(s.sid, sj.sid)
         else:
-            e2 += energy(s.sid, si.sid)
-        e1 += energy(s.sid, sj.sid)
+            e2 += energy_func(s.sid, si.sid)
+        e1 += energy_func(s.sid, sj.sid)
     return e1 - e2
 
 if __name__ == '__main__':
@@ -139,16 +134,21 @@ if __name__ == '__main__':
 
     seats = construct_seats(3, 3)
 
+    energies = np.outer(range(10),range(10))
+    assert (energies == energies.transpose()).all()
+    def test_energy_func(i, j):
+        return energies[i,j]
+
     # swap seats, test energy evaluation
     for i,j in (0,1), (0,5), (7,8), (3,4):
-        e0 = eval_energy(seats)
+        e0 = eval_energy(seats, test_energy_func)
         seats[i].sid, seats[j].sid = seats[j].sid, seats[i].sid
-        e1 = eval_energy(seats)
-        assert e1 - e0 == eval_energy_diff(seats, i, j)
+        e1 = eval_energy(seats, test_energy_func)
+        assert e1 - e0 == eval_energy_diff(seats, i, j, test_energy_func)
         seats[i].sid, seats[j].sid = seats[j].sid, seats[i].sid
-        e0again = eval_energy(seats)
+        e0again = eval_energy(seats, test_energy_func)
         assert e0 == e0again
-        assert e0 - e1 == eval_energy_diff(seats, i, j)
+        assert e0 - e1 == eval_energy_diff(seats, i, j, test_energy_func)
         seats[i].sid, seats[j].sid = seats[j].sid, seats[i].sid
 
 #    from pandas import DataFrame

@@ -11,7 +11,7 @@ from gradeanalytics import weighted_grade_matrix as wgm
 # choose coarser resolution by aggregation to some level
 wgm = wgm.groupby(level=0).agg(np.mean)
 # wgm = wgm.loc['HW'] # choose subset of highest resolution
-z = wgm.corr()
+z = wgm.corr().abs()
 fig = plt.figure()
 ax = fig.add_subplot(111)
 cset = ax.imshow(np.tril(z))
