@@ -47,12 +47,23 @@ def simulate(seats, energy_func, known_minimum = None, kbt = 1):
 
 
 if __name__ == '__main__':
+
     exe_func = lambda x, y: x*y
+
+    allprods = []
+    for i in range(1,10):
+        for j in range(1, 10):
+            allprods.append(i*j)
+    dacc = 0
+    for x in allprods:
+        for y in allprods:
+            dacc += abs(x-y)
+    kbt = dacc / len(allprods)**2
 
     seats = construct_seats(3,3)
     for s in seats:
         s.sid += 1
-    seats = simulate(seats, exe_func, known_minimum = 296, kbt=100)
+    seats = simulate(seats, exe_func, known_minimum = 296, kbt=kbt)
     for s in seats:
         print(s.number, s.sid, [(x.number, x.sid) for x in s.adjs])
 
@@ -60,7 +71,7 @@ if __name__ == '__main__':
     for s in seats:
         s.adjs.extend([seats[(s.number + 1) % 9], seats[(s.number - 1) % 9]])
     print()
-    seats = simulate(seats, exe_func, kbt=40)
+    seats = simulate(seats, exe_func, kbt=kbt)
     #seats = simulate(seats, exe_func, known_minimum=169, kbt=40)
     for s in seats:
         print(s.number, s.sid, [(x.number, x.sid) for x in s.adjs])
