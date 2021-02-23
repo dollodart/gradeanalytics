@@ -66,3 +66,8 @@ n2 = (r3*100).round(1).rename('Weight Fraction')
 n3 = ((r2*r3*100)/(r2*r3).sum()).round(1).rename('Point-Weight Fraction')
 print(concat((n1,n2,n3),axis=1))
 ```
+
+## Null and Zero Values
+Null, or not-a-number, values are omitted in calculating aggregates and propogated in calculating element-wise binary operators by pandas. Zero values, on the other hand, are effectively omitted except in cases of division, for which they convert they result in an error-less infinity. The question is what each one should represent. While it may generally be desired to have arbitrary strings be used to designate why an entry is missing, such as "not submitted" or "excused absence", those cannot be supported in a native way and will throw type errors. The best that can be done is to create a dictionary which maps those strings to 0 or NaN, and then to ensure the column data type is float (since with mixed data it will be read in as object). 
+
+To elaborate on the "not submitted" and "excused absence" cases. For some activities it is desired that the student, if missed for a valid reason, has that assignment omitted from their total score, so that all other assignments take over in importance. This is not trivial to implement since the total is usually calculated independently of the student score, and then broadcasted over all student scores. But it could be implemented by using NaN to omit from aggregates regarding that student. Not submitted, on the other hand, receives a score of 0, which should be distinct from any submitted assignment score and allow one to, by testing for equality, determine the number of assignments not submitted.
