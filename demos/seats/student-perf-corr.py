@@ -11,7 +11,7 @@ from gradeanalytics import grades as gm
 # choose coarser resolution by aggregation to some level
 gm = gm.groupby(level=0).agg(np.mean)
 # gm = gm.loc['HW'] # choose subset of highest resolution
-z = gm.corr()
+z = gm.corr().abs()
 fig = plt.figure()
 ax = fig.add_subplot(111)
 cset = ax.imshow(np.tril(z))
