@@ -205,3 +205,10 @@ assignment score and allow one to, by testing for equality, determine
 the number of assignments not submitted. This is, without any further
 intervention, supported since student's scores are not used to divide
 any quantity.
+
+# Future development
+
+I no longer have use for these utilities and will not in the foreseeable
+future. However if you have a use case or feature you would like
+supported please put an issue on the project and I will look at it and
+may implement it.
